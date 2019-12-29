@@ -30,7 +30,7 @@ class DataFetcher : public QObject
     Q_PROPERTY(QVariantList labels READ labels NOTIFY sourceChanged)
     Q_PROPERTY(QVariantMap checkedMap READ checkedMap NOTIFY checkedMapChanged)
     Q_PROPERTY(QStringList properties READ properties WRITE setProperties NOTIFY propertiesChanged)
-    Q_PROPERTY(bool friendsMode READ friendsMode WRITE setFriendsMode NOTIFY friendsModeChanged)
+    Q_PROPERTY(QVariantList mergables READ mergables WRITE setMergables NOTIFY mergablesChanged)
     class Private;
 
 public:
@@ -43,11 +43,11 @@ public:
     QStringList properties() const;
     void setProperties(const QStringList &properties);
 
+    QVariantList mergables() const;
+    void setMergables(const QVariantList &mergables);
+
     QVariantList byProperties();
     QVariantList labels();
-
-    bool friendsMode() const;
-    void setFriendsMode(bool friendsMode);
 
     QVariantMap checkedMap() const;
 
@@ -56,9 +56,9 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void sourceChanged();
+    void mergablesChanged();
     void propertiesChanged();
     void checkedMapChanged();
-    void friendsModeChanged();
 
 private:
     void load();

@@ -24,7 +24,17 @@ Window {
 
     DataFetcher {
         id: fetcher
-        friendsMode: mixSwitch.checked
+        mergables: {
+            if (!mixSwitch.checked)
+                return new Array
+
+            return [
+                {
+                    title: "Friends",
+                    list: ["Casual rel", "Close rel"]
+                }
+            ]
+        }
     }
 
     ScrollView {
@@ -190,6 +200,7 @@ Window {
         SwitchDelegate {
             id: mixSwitch
             text: qsTr("Friends")
+            checked: true
         }
 
         Item { width: 1; height: 20 }

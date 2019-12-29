@@ -37,10 +37,10 @@ public:
     class PropertyLabel;
     class PropertyValue;
 
-    bool friendsMode = false;
     QString source;
 
     QVariantMap checkedMap;
+    QVariantList mergables;
     QStringList propertiesValue;
     QMap<QString, PropertyItem> properties;
     QHash<QString, DataItem> hash;
@@ -128,6 +128,20 @@ void DataFetcher::setProperties(const QStringList &properties)
     Q_EMIT propertiesChanged();
 }
 
+QVariantList DataFetcher::mergables() const
+{
+    return p->mergables;
+}
+
+void DataFetcher::setMergables(const QVariantList &mergables)
+{
+    if (p->mergables == mergables)
+        return;
+
+    p->mergables = mergables;
+    Q_EMIT mergablesChanged();
+}
+
 QVariantList DataFetcher::byProperties()
 {
     QVariantList res;
@@ -191,20 +205,6 @@ QVariantList DataFetcher::labels()
     }
 
     return res;
-}
-
-bool DataFetcher::friendsMode() const
-{
-    return p->friendsMode;
-}
-
-void DataFetcher::setFriendsMode(bool friendsMode)
-{
-    if (p->friendsMode == friendsMode)
-        return;
-
-    p->friendsMode = friendsMode;
-    Q_EMIT friendsModeChanged();
 }
 
 QVariantMap DataFetcher::checkedMap() const
@@ -315,8 +315,15 @@ QVariantMap DataFetcher::check(const QString &path)
         res += valuesStr + "\n";
     }
 
-    if (p->friendsMode)
-        globalRates["Friends"] = globalRates["Casual rel"] + globalRates["Close rel"];
+    for(const QVariant &v: p->mergables)
+    {
+        QVariantMap m = v.toMap();
+
+        QString title = m.value("title").toString();
+        QStringList list = m.value("list").toStringList();
+        for (const QString &l: list)
+            globalRates[title] += globalRates[l];
+    }
 
     QMap<qreal, QString> globalRatesMap;
     QHashIterator<QString, qreal> ir(globalRates);
@@ -326,16 +333,26 @@ QVariantMap DataFetcher::check(const QString &path)
         QString property = ir.key();
         qreal value = ir.value();
 
-        globalRatesMap[ir.value()] = property;
+        globalRatesMap[value] = property;
     }
 
     QString winner = globalRatesMap.last();
-    if (winner == "Friends")
+    for(const QVariant &v: p->mergables)
     {
-        if (globalRates["Casual rel"] > globalRates["Close rel"])
-            winner = "Friends (Casual rel)";
-        else
-            winner = "Friends (Close rel)";
+        QVariantMap m = v.toMap();
+
+        QString title = m.value("title").toString();
+        if (winner != title)
+            continue;
+
+        qreal max = 0;
+        QStringList list = m.value("list").toStringList();
+        for (const QString &l: list)
+            if (globalRates[l] > max)
+            {
+                winner = QString("%1 (%2)").arg(title).arg(l);
+                max = globalRates[l];
+            }
     }
 
     QString percents;
